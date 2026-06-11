@@ -79,6 +79,18 @@ Open **http://127.0.0.1:8000**
 
 ---
 
+## Render Deployment
+
+For Render, use the Django WSGI app as the start command:
+
+```bash
+gunicorn supply_chain.wsgi
+```
+
+Make sure `GROQ_API_KEY` is configured in Render environment variables, not in `.env`.
+
+---
+
 ## Export Results
 
 You can export both simulation runs and generated CEO reports as **PDF** or **CSV**:
