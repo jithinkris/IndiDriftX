@@ -1,0 +1,113 @@
+{% extends 'intelligence/base.html' %}
+{% load static %}
+
+{% block title %}Shock Simulator — Supply Chain Shock Intelligence{% endblock %}
+{% block page_title %}Shock Simulator{% endblock %}
+{% block page_subtitle %}Model supply chain disruptions across Oil, Semiconductor, and Rare Earth scenarios{% endblock %}
+
+{% block content %}
+<div class="simulator-layout">
+    <div class="card simulator-controls">
+        <h3>Scenario Configuration</h3>
+
+        <div class="shock-selector">
+            {% for slug, shock in shock_types.items %}
+            <button class="shock-btn {% if selected_shock == slug %}active{% endif %}"
+                    data-shock="{{ slug }}"
+                    style="--shock-color: {{ shock.color }}">
+                <span>{{ shock.icon }}</span>
+                <span>{{ shock.name }}</span>
+            </button>
+            {% endfor %}
+        </div>
+
+        <div class="severity-control">
+            <label for="severitySlider">
+                Severity Level: <strong id="severityValue">{{ severity }}</strong>%
+            </label>
+            <input type="range" id="severitySlider" min="0" max="100" value="{{ severity }}" class="severity-slider">
+            <div class="severity-labels">
+                <span>Minor</span><span>Moderate</span><span>Severe</span><span>Critical</span>
+            </div>
+        </div>
+
+        <button id="runSimulation" class="btn btn-primary btn-block">Run &amp; Save Simulation</button>
+
+        <div class="export-group">
+            <span class="export-label">Export current scenario</span>
+            <div class="export-buttons">
+                <a id="exportCsv" href="{% url 'intelligence:export_simulation_live' 'csv' %}?shock={{ selected_shock }}&severity={{ severity }}" class="btn btn-outline btn-sm">CSV</a>
+                <a id="exportPdf" href="{% url 'intelligence:export_simulation_live' 'pdf' %}?shock={{ selected_shock }}&severity={{ severity }}" class="btn btn-outline btn-sm">PDF</a>
+            </div>
+        </div>
+
+        <div id="simStatus" class="status-message"></div>
+    </div>
+
+    <div class="simulator-results">
+        <div class="stats-grid">
+            <div class="stat-card highlight">
+                <div class="stat-label">Price Increase</div>
+                <div class="stat-value text-danger" id="priceImpact">+{{ impact.price_increase_pct }}%</div>
+            </div>
+            <div class="stat-card highlight">
+                <div class="stat-label">Shortage Probability</div>
+                <div class="stat-value text-warning" id="shortageProb">{{ impact.shortage_probability }}%</div>
+            </div>
+            <div class="stat-card highlight">
+                <div class="stat-label">GDP Impact</div>
+                <div class="stat-value" id="gdpImpact">{{ impact.gdp_impact_pct }}%</div>
+            </div>
+            <div class="stat-card highlight">
+                <div class="stat-label">Countries Affected</div>
+                <div class="stat-value" id="affectedCount">{{ impact.affected_count }}</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Shock Timeline</h3>
+            <div class="timeline" id="shockTimeline">
+                {% for phase in impact.timeline %}
+                <div class="timeline-item">
+                    <div class="timeline-marker"></div>
+                    <div class="timeline-content">
+                        <strong>{{ phase.phase }} — {{ phase.label }}</strong>
+                        <p>{{ phase.description }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Most Affected Countries</h3>
+            <div class="affected-countries" id="affectedCountries">
+                {% for country in impact.affected_countries %}
+                <div class="affected-country">
+                    <span class="country-name">{{ country.name }}</span>
+                    <div class="impact-bar">
+                        <div class="impact-fill" style="width: {{ country.impact }}%"></div>
+                    </div>
+                    <span class="impact-value">{{ country.impact }}%</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    window.SIMULATOR_CONFIG = {
+        selectedShock: '{{ selected_shock }}',
+        severity: {{ severity }},
+        apiUrl: '{% url "intelligence:api_impact" %}',
+        runUrl: '{% url "intelligence:run_simulation" %}',
+        exportCsvBase: '{% url "intelligence:export_simulation_live" "csv" %}',
+        exportPdfBase: '{% url "intelligence:export_simulation_live" "pdf" %}',
+        csrfToken: '{{ csrf_token }}'
+    };
+</script>
+<script src="{% static 'intelligence/js/simulator.js' %}"></script>
+{% endblock %}

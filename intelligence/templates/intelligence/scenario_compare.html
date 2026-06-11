@@ -1,0 +1,149 @@
+{% extends 'intelligence/base.html' %}
+{% load static %}
+
+{% block title %}Scenario Compare — Supply Chain Shock Intelligence{% endblock %}
+{% block page_title %}Scenario Comparison{% endblock %}
+{% block page_subtitle %}Run two shock scenarios side by side and compare impact metrics{% endblock %}
+
+{% block content %}
+<div class="compare-layout">
+    <div class="compare-panel card" id="panelA">
+        <h3>Scenario A</h3>
+        <div class="shock-selector compact">
+            {% for slug, shock in shock_types.items %}
+            <button class="shock-btn shock-btn-a {% if shock_a == slug %}active{% endif %}"
+                    data-shock="{{ slug }}" style="--shock-color: {{ shock.color }}">
+                <span>{{ shock.icon }}</span>
+                <span>{{ shock.name }}</span>
+            </button>
+            {% endfor %}
+        </div>
+        <div class="severity-control">
+            <label>Severity: <strong id="severityValueA">{{ severity_a }}</strong>%</label>
+            <input type="range" id="severityA" min="0" max="100" value="{{ severity_a }}" class="severity-slider">
+        </div>
+        <div class="compare-metrics" id="metricsA">
+            <div class="compare-metric">
+                <span>Price Increase</span>
+                <strong class="text-danger">+{{ comparison.scenario_a.price_increase_pct }}%</strong>
+            </div>
+            <div class="compare-metric">
+                <span>Shortage Prob.</span>
+                <strong class="text-warning">{{ comparison.scenario_a.shortage_probability }}%</strong>
+            </div>
+            <div class="compare-metric">
+                <span>GDP Impact</span>
+                <strong>{{ comparison.scenario_a.gdp_impact_pct }}%</strong>
+            </div>
+            <div class="compare-metric">
+                <span>Countries</span>
+                <strong>{{ comparison.scenario_a.affected_count }}</strong>
+            </div>
+        </div>
+    </div>
+
+    <div class="compare-vs card">
+        <div class="vs-badge">VS</div>
+        <div class="delta-metrics" id="deltaMetrics">
+            <div class="delta-item">
+                <span>Δ Price</span>
+                <strong id="deltaPrice" class="{% if comparison.delta.price_increase_pct > 0 %}text-danger{% elif comparison.delta.price_increase_pct < 0 %}text-success{% endif %}">
+                    {% if comparison.delta.price_increase_pct > 0 %}+{% endif %}{{ comparison.delta.price_increase_pct }}%
+                </strong>
+            </div>
+            <div class="delta-item">
+                <span>Δ Shortage</span>
+                <strong id="deltaShortage">{% if comparison.delta.shortage_probability > 0 %}+{% endif %}{{ comparison.delta.shortage_probability }}%</strong>
+            </div>
+            <div class="delta-item">
+                <span>Δ GDP</span>
+                <strong id="deltaGdp">{% if comparison.delta.gdp_impact_pct > 0 %}+{% endif %}{{ comparison.delta.gdp_impact_pct }}%</strong>
+            </div>
+        </div>
+    </div>
+
+    <div class="compare-panel card" id="panelB">
+        <h3>Scenario B</h3>
+        <div class="shock-selector compact">
+            {% for slug, shock in shock_types.items %}
+            <button class="shock-btn shock-btn-b {% if shock_b == slug %}active{% endif %}"
+                    data-shock="{{ slug }}" style="--shock-color: {{ shock.color }}">
+                <span>{{ shock.icon }}</span>
+                <span>{{ shock.name }}</span>
+            </button>
+            {% endfor %}
+        </div>
+        <div class="severity-control">
+            <label>Severity: <strong id="severityValueB">{{ severity_b }}</strong>%</label>
+            <input type="range" id="severityB" min="0" max="100" value="{{ severity_b }}" class="severity-slider">
+        </div>
+        <div class="compare-metrics" id="metricsB">
+            <div class="compare-metric">
+                <span>Price Increase</span>
+                <strong class="text-danger">+{{ comparison.scenario_b.price_increase_pct }}%</strong>
+            </div>
+            <div class="compare-metric">
+                <span>Shortage Prob.</span>
+                <strong class="text-warning">{{ comparison.scenario_b.shortage_probability }}%</strong>
+            </div>
+            <div class="compare-metric">
+                <span>GDP Impact</span>
+                <strong>{{ comparison.scenario_b.gdp_impact_pct }}%</strong>
+            </div>
+            <div class="compare-metric">
+                <span>Countries</span>
+                <strong>{{ comparison.scenario_b.affected_count }}</strong>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <h3>Metric Comparison Chart</h3>
+    <div class="chart-container">
+        <canvas id="compareChart"></canvas>
+    </div>
+</div>
+
+<div class="grid-2">
+    <div class="card">
+        <h3>Scenario A — Top Suppliers at Risk</h3>
+        <div id="suppliersA" class="supplier-mini-list">
+            {% for s in comparison.suppliers_a %}
+            <div class="supplier-mini risk-{{ s.risk_level }}">
+                <strong>{{ s.name }}</strong>
+                <span>{{ s.sector }}</span>
+                <span class="risk-badge-mini">{{ s.risk_score }}%</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="card">
+        <h3>Scenario B — Top Suppliers at Risk</h3>
+        <div id="suppliersB" class="supplier-mini-list">
+            {% for s in comparison.suppliers_b %}
+            <div class="supplier-mini risk-{{ s.risk_level }}">
+                <strong>{{ s.name }}</strong>
+                <span>{{ s.sector }}</span>
+                <span class="risk-badge-mini">{{ s.risk_score }}%</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+    window.COMPARE_CONFIG = {
+        apiUrl: '{% url "intelligence:api_compare" %}',
+        shockA: '{{ shock_a }}',
+        shockB: '{{ shock_b }}',
+        severityA: {{ severity_a }},
+        severityB: {{ severity_b }},
+        initial: {{ comparison_json|safe }}
+    };
+</script>
+<script src="{% static 'intelligence/js/compare.js' %}"></script>
+{% endblock %}

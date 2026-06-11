@@ -1,0 +1,56 @@
+{% extends 'intelligence/base.html' %}
+{% load static %}
+
+{% block title %}World Risk Map — Supply Chain Shock Intelligence{% endblock %}
+{% block page_title %}World Risk Map{% endblock %}
+{% block page_subtitle %}Color-coded country risk markers with supply chain exposure overlays{% endblock %}
+
+{% block content %}
+<div class="map-controls card">
+    <div class="shock-tabs">
+        {% for slug, shock in shock_types.items %}
+        <a href="?shock={{ slug }}" class="shock-tab {% if selected_shock == slug %}active{% endif %}">
+            {{ shock.icon }} {{ shock.name }}
+        </a>
+        {% endfor %}
+    </div>
+    <div class="risk-legend">
+        <span class="legend-item"><span class="risk-dot risk-low"></span> Low</span>
+        <span class="legend-item"><span class="risk-dot risk-medium"></span> Medium</span>
+        <span class="legend-item"><span class="risk-dot risk-high"></span> High</span>
+        <span class="legend-item"><span class="risk-dot risk-critical"></span> Critical</span>
+    </div>
+</div>
+
+<div class="map-container card">
+    <div id="riskMap"></div>
+</div>
+
+<div class="card">
+    <h3>Country Risk Index</h3>
+    <div class="country-table-wrapper">
+        <table class="data-table" id="countryTable">
+            <thead>
+                <tr>
+                    <th>Country</th>
+                    <th>Risk Level</th>
+                    <th>Risk Score</th>
+                    <th>Oil Exp.</th>
+                    <th>Semi Exp.</th>
+                    <th>Rare Earth Exp.</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    window.RISK_MAP_DATA = {{ countries_json|safe }};
+    window.SELECTED_SHOCK = '{{ selected_shock }}';
+</script>
+<script src="{% static 'intelligence/js/risk_map.js' %}"></script>
+{% endblock %}

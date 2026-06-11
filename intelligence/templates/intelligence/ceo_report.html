@@ -1,0 +1,99 @@
+{% extends 'intelligence/base.html' %}
+{% load static %}
+
+{% block title %}CEO Report Generator — Supply Chain Shock Intelligence{% endblock %}
+{% block page_title %}CEO Report Generator{% endblock %}
+{% block page_subtitle %}AI-powered executive intelligence briefings via Groq LLM{% endblock %}
+
+{% block content %}
+<div class="ceo-layout">
+    <div class="card ceo-controls">
+        <h3>Report Configuration</h3>
+
+        {% if not has_api_key %}
+        <div class="alert alert-warning">
+            <strong>API Key Required:</strong> Set <code>GROQ_API_KEY</code> in your <code>.env</code> file, then <strong>restart the server</strong> (<code>python manage.py runserver</code>).
+        </div>
+        {% else %}
+        <div class="alert alert-success api-ready-notice">
+            <strong>Groq API connected.</strong> Model: <code>{{ groq_model }}</code>
+        </div>
+        {% endif %}
+
+        <div class="form-group">
+            <label for="ceoShockSelect">Shock Type</label>
+            <select id="ceoShockSelect" class="form-select">
+                {% for slug, shock in shock_types.items %}
+                <option value="{{ slug }}" {% if selected_shock == slug %}selected{% endif %}>
+                    {{ shock.icon }} {{ shock.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="ceoSeverity">Severity: <strong id="ceoSeverityValue">{{ severity }}</strong>%</label>
+            <input type="range" id="ceoSeverity" min="0" max="100" value="{{ severity }}" class="severity-slider">
+        </div>
+
+        <button id="generateReport" class="btn btn-accent btn-block" {% if not has_api_key %}disabled{% endif %}>
+            Generate CEO Report
+        </button>
+        <div id="reportStatus" class="status-message"></div>
+    </div>
+
+    <div class="card ceo-output">
+        <div class="report-header">
+            <h3>Executive Intelligence Report</h3>
+            <div class="report-header-actions">
+                <span id="reportMeta" class="report-meta"></span>
+                <div id="reportExportActions" class="export-buttons hidden">
+                    <a id="exportReportCsv" href="#" class="btn btn-outline btn-sm">Export CSV</a>
+                    <a id="exportReportPdf" href="#" class="btn btn-outline btn-sm">Export PDF</a>
+                </div>
+            </div>
+        </div>
+        <div id="reportContent" class="report-content">
+            <div class="report-placeholder">
+                <span class="placeholder-icon">📋</span>
+                <p>Configure a shock scenario and click <strong>Generate CEO Report</strong> to produce an AI-powered executive briefing.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if recent_reports %}
+<div class="card">
+    <h3>Previous Reports</h3>
+    <div class="report-history">
+        {% for report in recent_reports %}
+        <div class="history-item" data-report="{{ report.report_content|escapejs }}" data-report-id="{{ report.id }}">
+            <div class="history-header">
+                <strong>{{ report.shock_type|title }} — Severity {{ report.severity }}%</strong>
+                <small>{{ report.created_at|date:"M d, Y H:i" }}</small>
+            </div>
+            <p>{{ report.report_content|truncatewords:30 }}</p>
+            <div class="history-actions">
+                <button class="btn btn-outline btn-sm view-report-btn">View Full Report</button>
+                <a href="{% url 'intelligence:export_ceo_report' report.id 'csv' %}" class="btn btn-outline btn-sm">CSV</a>
+                <a href="{% url 'intelligence:export_ceo_report' report.id 'pdf' %}" class="btn btn-outline btn-sm">PDF</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    window.CEO_CONFIG = {
+        generateUrl: '{% url "intelligence:generate_ceo_report" %}',
+        exportCsvBase: '{% url "intelligence:export_ceo_report" 0 "csv" %}'.replace('/0/csv/', '/'),
+        exportPdfBase: '{% url "intelligence:export_ceo_report" 0 "pdf" %}'.replace('/0/pdf/', '/'),
+        csrfToken: '{{ csrf_token }}',
+        hasApiKey: {{ has_api_key|yesno:"true,false" }}
+    };
+</script>
+<script src="{% static 'intelligence/js/ceo_report.js' %}"></script>
+{% endblock %}

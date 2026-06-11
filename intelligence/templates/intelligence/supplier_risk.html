@@ -1,0 +1,123 @@
+{% extends 'intelligence/base.html' %}
+
+{% block title %}Supplier Risk — Supply Chain Shock Intelligence{% endblock %}
+{% block page_title %}Affected Supplier Analysis{% endblock %}
+{% block page_subtitle %}Which companies and suppliers become risky under each shock scenario{% endblock %}
+
+{% block content %}
+<div class="filter-bar card">
+    <form method="get" class="filter-form" id="supplierFilter">
+        <div class="form-group">
+            <label for="shockSelect">Shock Type</label>
+            <select name="shock" id="shockSelect" class="form-select">
+                {% for slug, s in shock_types.items %}
+                <option value="{{ slug }}" {% if selected_shock == slug %}selected{% endif %}>
+                    {{ s.icon }} {{ s.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="severityInput">Severity: <strong id="severityDisplay">{{ severity }}</strong>%</label>
+            <input type="range" name="severity" id="severityInput" min="0" max="100" value="{{ severity }}" class="severity-slider">
+        </div>
+        <button type="submit" class="btn btn-primary">Analyze</button>
+    </form>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-value">{{ total_suppliers }}</div>
+        <div class="stat-label">Suppliers at Risk</div>
+    </div>
+    <div class="stat-card stat-sell">
+        <div class="stat-value">{{ critical_count }}</div>
+        <div class="stat-label">Critical Risk</div>
+    </div>
+    <div class="stat-card stat-hold">
+        <div class="stat-value">{{ high_count }}</div>
+        <div class="stat-label">High Risk</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ severity }}%</div>
+        <div class="stat-label">Scenario Severity</div>
+    </div>
+</div>
+
+<div class="card">
+    <h3>Supplier Risk Breakdown</h3>
+    <div class="chart-container chart-short">
+        <canvas id="supplierRiskChart"></canvas>
+    </div>
+</div>
+
+<div class="supplier-grid">
+    {% for supplier in suppliers %}
+    <div class="supplier-card risk-{{ supplier.risk_level }}">
+        <div class="supplier-card-header">
+            <div>
+                <span class="supplier-tier">Tier {{ supplier.tier }}</span>
+                <h4>{{ supplier.name }}</h4>
+                <span class="supplier-sector">{{ supplier.sector }} · {{ supplier.country }}</span>
+            </div>
+            <span class="rec-badge rec-{% if supplier.risk_level == 'critical' %}sell{% elif supplier.risk_level == 'high' %}hold{% else %}buy{% endif %}">
+                {{ supplier.risk_level|upper }}
+            </span>
+        </div>
+        <div class="supplier-risk-bar">
+            <div class="supplier-risk-fill risk-{{ supplier.risk_level }}" style="width: {{ supplier.risk_score }}%"></div>
+        </div>
+        <div class="supplier-metrics">
+            <span>Risk Score: <strong>{{ supplier.risk_score }}%</strong></span>
+        </div>
+        <p class="supplier-desc">{{ supplier.description }}</p>
+    </div>
+    {% empty %}
+    <div class="card">
+        <div class="report-placeholder">
+            <span class="placeholder-icon">🏭</span>
+            <p>No suppliers flagged at this severity. Increase the severity slider to surface at-risk suppliers.</p>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+    document.getElementById('severityInput').addEventListener('input', function () {
+        document.getElementById('severityDisplay').textContent = this.value;
+    });
+
+    const riskCounts = { critical: 0, high: 0, medium: 0, low: 0 };
+    {% for supplier in suppliers %}
+    riskCounts['{{ supplier.risk_level }}']++;
+    {% endfor %}
+
+    const ctx = document.getElementById('supplierRiskChart');
+    if (ctx) {
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Critical', 'High', 'Medium', 'Low'],
+                datasets: [{
+                    label: 'Suppliers',
+                    data: [riskCounts.critical, riskCounts.high, riskCounts.medium, riskCounts.low],
+                    backgroundColor: ['#ef4444', '#f97316', '#eab308', '#22c55e'],
+                    borderRadius: 6,
+                }],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, ticks: { stepSize: 1, color: '#94a3b8' }, grid: { color: 'rgba(30,58,95,0.5)' } },
+                    x: { ticks: { color: '#e2e8f0' }, grid: { display: false } },
+                },
+            },
+        });
+    }
+</script>
+{% endblock %}

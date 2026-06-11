@@ -1,0 +1,73 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Supply Chain Shock Intelligence{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'intelligence/css/style.css' %}">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <div class="app-layout">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <span class="logo-icon">🌐</span>
+                    <div class="logo-text">
+                        <strong>SCSI</strong>
+                        <small>Shock Intelligence</small>
+                    </div>
+                </div>
+                <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">☰</button>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="{% url 'intelligence:dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                    <span class="nav-icon">📊</span> Dashboard
+                </a>
+                <a href="{% url 'intelligence:shock_simulator' %}" class="nav-link {% if request.resolver_match.url_name == 'shock_simulator' %}active{% endif %}">
+                    <span class="nav-icon">⚡</span> Shock Simulator
+                </a>
+                <a href="{% url 'intelligence:scenario_compare' %}" class="nav-link {% if request.resolver_match.url_name == 'scenario_compare' %}active{% endif %}">
+                    <span class="nav-icon">⚖️</span> Scenario Compare
+                </a>
+                <a href="{% url 'intelligence:shock_history' %}" class="nav-link {% if request.resolver_match.url_name == 'shock_history' %}active{% endif %}">
+                    <span class="nav-icon">📈</span> Shock History
+                </a>
+                <a href="{% url 'intelligence:supplier_risk' %}" class="nav-link {% if request.resolver_match.url_name == 'supplier_risk' %}active{% endif %}">
+                    <span class="nav-icon">🏭</span> Supplier Risk
+                </a>
+                <a href="{% url 'intelligence:risk_map' %}" class="nav-link {% if request.resolver_match.url_name == 'risk_map' %}active{% endif %}">
+                    <span class="nav-icon">🗺️</span> World Risk Map
+                </a>
+                <a href="{% url 'intelligence:consumer_impact' %}" class="nav-link {% if request.resolver_match.url_name == 'consumer_impact' %}active{% endif %}">
+                    <span class="nav-icon">🛒</span> Consumer Impact
+                </a>
+                <a href="{% url 'intelligence:investment' %}" class="nav-link {% if request.resolver_match.url_name == 'investment' %}active{% endif %}">
+                    <span class="nav-icon">💹</span> Investment Dashboard
+                </a>
+                <a href="{% url 'intelligence:ceo_report' %}" class="nav-link {% if request.resolver_match.url_name == 'ceo_report' %}active{% endif %}">
+                    <span class="nav-icon">📋</span> CEO Report
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <small>Global Supply Chain<br>Shock Intelligence v1.0</small>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="page-header">
+                <h1>{% block page_title %}Dashboard{% endblock %}</h1>
+                <p class="page-subtitle">{% block page_subtitle %}{% endblock %}</p>
+            </header>
+            <div class="page-body">
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+
+    <script src="{% static 'intelligence/js/main.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

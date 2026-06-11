@@ -1,0 +1,107 @@
+{% extends 'intelligence/base.html' %}
+{% load static %}
+
+{% block title %}Shock History — Supply Chain Shock Intelligence{% endblock %}
+{% block page_title %}Shock History &amp; Trends{% endblock %}
+{% block page_subtitle %}Line chart of past simulation runs — price impact, shortage probability, and severity over time{% endblock %}
+
+{% block content %}
+<div class="filter-bar card">
+    <form method="get" class="filter-form">
+        <div class="form-group">
+            <label for="shockFilter">Filter by Shock Type</label>
+            <select name="shock" id="shockFilter" class="form-select" onchange="this.form.submit()">
+                <option value="all" {% if selected_filter == 'all' %}selected{% endif %}>All Shocks</option>
+                {% for slug, shock in shock_types.items %}
+                <option value="{{ slug }}" {% if selected_filter == slug %}selected{% endif %}>
+                    {{ shock.icon }} {{ shock.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="history-stats">
+            <span class="stat-pill">{{ total_count }} simulation{{ total_count|pluralize }} recorded</span>
+        </div>
+    </form>
+</div>
+
+{% if total_count > 0 %}
+<div class="grid-2">
+    <div class="card">
+        <h3>Price Increase Trend</h3>
+        <div class="chart-container">
+            <canvas id="priceTrendChart"></canvas>
+        </div>
+    </div>
+    <div class="card">
+        <h3>Shortage Probability Trend</h3>
+        <div class="chart-container">
+            <canvas id="shortageTrendChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <h3>Severity &amp; GDP Impact Over Time</h3>
+    <div class="chart-container chart-tall">
+        <canvas id="combinedTrendChart"></canvas>
+    </div>
+</div>
+
+<div class="card">
+    <h3>Simulation Log</h3>
+    <div class="country-table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Shock</th>
+                    <th>Severity</th>
+                    <th>Price ↑</th>
+                    <th>Shortage %</th>
+                    <th>GDP Impact</th>
+                    <th>Countries</th>
+                    <th>Date</th>
+                    <th>Export</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sim in simulations %}
+                <tr>
+                    <td>{{ sim.id }}</td>
+                    <td>{{ sim.shock_type|title }}</td>
+                    <td>{{ sim.severity }}%</td>
+                    <td class="text-danger">+{{ sim.price_increase_pct }}%</td>
+                    <td class="text-warning">{{ sim.shortage_probability }}%</td>
+                    <td>{{ sim.gdp_impact_pct }}%</td>
+                    <td>{{ sim.affected_countries }}</td>
+                    <td>{{ sim.created_at|date:"M d, Y H:i" }}</td>
+                    <td class="export-cell">
+                        <a href="{% url 'intelligence:export_simulation_saved' sim.id 'csv' %}" class="btn btn-outline btn-sm">CSV</a>
+                        <a href="{% url 'intelligence:export_simulation_saved' sim.id 'pdf' %}" class="btn btn-outline btn-sm">PDF</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="card">
+    <div class="report-placeholder">
+        <span class="placeholder-icon">📈</span>
+        <p>No simulation history yet. <a href="{% url 'intelligence:shock_simulator' %}">Run simulations</a> to build trend data over time.</p>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+{% if total_count > 0 %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+    window.HISTORY_DATA = {{ chart_json|safe }};
+</script>
+<script src="{% static 'intelligence/js/history.js' %}"></script>
+{% endif %}
+{% endblock %}

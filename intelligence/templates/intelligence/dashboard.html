@@ -1,0 +1,120 @@
+{% extends 'intelligence/base.html' %}
+
+{% block title %}Dashboard — Supply Chain Shock Intelligence{% endblock %}
+{% block page_title %}Intelligence Dashboard{% endblock %}
+{% block page_subtitle %}Real-time supply chain shock monitoring and scenario analysis{% endblock %}
+
+{% block content %}
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon">⚡</div>
+        <div class="stat-value">{{ default_impact.price_increase_pct }}%</div>
+        <div class="stat-label">Baseline Price Impact</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">📦</div>
+        <div class="stat-value">{{ default_impact.shortage_probability }}%</div>
+        <div class="stat-label">Shortage Probability</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">🌍</div>
+        <div class="stat-value">{{ default_impact.affected_count }}</div>
+        <div class="stat-label">Countries at Risk</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">📉</div>
+        <div class="stat-value">{{ default_impact.gdp_impact_pct }}%</div>
+        <div class="stat-label">GDP Impact Estimate</div>
+    </div>
+</div>
+
+<div class="grid-2">
+    <div class="card">
+        <h3>Shock Categories</h3>
+        <div class="shock-list">
+            {% for slug, shock in shock_types.items %}
+            <a href="{% url 'intelligence:shock_simulator' %}?shock={{ slug }}" class="shock-item">
+                <span class="shock-item-icon">{{ shock.icon }}</span>
+                <div>
+                    <strong>{{ shock.name }}</strong>
+                    <p>{{ shock.description|truncatewords:12 }}</p>
+                </div>
+                <span class="badge" style="background: {{ shock.color }}">{{ shock.base_price_impact }}% base</span>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>Top Risk Countries</h3>
+        <div class="country-list">
+            {% for country in countries|dictsortreversed:"risk_score"|slice:":6" %}
+            <div class="country-row">
+                <span class="risk-dot risk-{{ country.risk_level }}"></span>
+                <span class="country-name">{{ country.name }}</span>
+                <span class="risk-score">{{ country.risk_score }}</span>
+            </div>
+            {% endfor %}
+        </div>
+        <a href="{% url 'intelligence:risk_map' %}" class="btn btn-outline btn-sm">View Full Map →</a>
+    </div>
+</div>
+
+<div class="grid-2">
+    <div class="card">
+        <h3>Recent Simulations</h3>
+        {% if recent_simulations %}
+        <table class="data-table">
+            <thead>
+                <tr><th>Shock</th><th>Severity</th><th>Price ↑</th><th>Date</th><th>Export</th></tr>
+            </thead>
+            <tbody>
+                {% for sim in recent_simulations %}
+                <tr>
+                    <td>{{ sim.shock_type|title }}</td>
+                    <td>{{ sim.severity }}%</td>
+                    <td class="text-danger">+{{ sim.price_increase_pct }}%</td>
+                    <td>{{ sim.created_at|date:"M d, H:i" }}</td>
+                    <td class="export-cell">
+                        <a href="{% url 'intelligence:export_simulation_saved' sim.id 'csv' %}" class="btn btn-outline btn-sm">CSV</a>
+                        <a href="{% url 'intelligence:export_simulation_saved' sim.id 'pdf' %}" class="btn btn-outline btn-sm">PDF</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="text-muted">No simulations yet. <a href="{% url 'intelligence:shock_simulator' %}">Run your first simulation</a>.</p>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <h3>Recent CEO Reports</h3>
+        {% if recent_reports %}
+        <div class="report-list">
+            {% for report in recent_reports %}
+            <div class="report-item">
+                <strong>{{ report.shock_type|title }} — {{ report.severity }}%</strong>
+                <small>{{ report.created_at|date:"M d, Y H:i" }}</small>
+                <p>{{ report.report_content|truncatewords:25 }}</p>
+                <div class="history-actions">
+                    <a href="{% url 'intelligence:export_ceo_report' report.id 'csv' %}" class="btn btn-outline btn-sm">CSV</a>
+                    <a href="{% url 'intelligence:export_ceo_report' report.id 'pdf' %}" class="btn btn-outline btn-sm">PDF</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-muted">No reports generated. <a href="{% url 'intelligence:ceo_report' %}">Generate a CEO report</a>.</p>
+        {% endif %}
+    </div>
+</div>
+
+<div class="quick-actions">
+    <a href="{% url 'intelligence:shock_simulator' %}" class="btn btn-primary">Run Simulation</a>
+    <a href="{% url 'intelligence:scenario_compare' %}" class="btn btn-secondary">Compare Scenarios</a>
+    <a href="{% url 'intelligence:shock_history' %}" class="btn btn-secondary">View History</a>
+    <a href="{% url 'intelligence:supplier_risk' %}" class="btn btn-secondary">Supplier Risk</a>
+    <a href="{% url 'intelligence:ceo_report' %}" class="btn btn-accent">Generate CEO Report</a>
+</div>
+{% endblock %}

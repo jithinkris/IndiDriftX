@@ -1,0 +1,78 @@
+{% extends 'intelligence/base.html' %}
+
+{% block title %}Consumer Impact — Supply Chain Shock Intelligence{% endblock %}
+{% block page_title %}Consumer Impact Analysis{% endblock %}
+{% block page_subtitle %}Projected price increases and shortage probabilities for consumer products{% endblock %}
+
+{% block content %}
+<div class="filter-bar card">
+    <form method="get" class="filter-form" id="consumerFilter">
+        <div class="form-group">
+            <label for="shockSelect">Shock Type</label>
+            <select name="shock" id="shockSelect" class="form-select">
+                {% for slug, s in shock_types.items %}
+                <option value="{{ slug }}" {% if selected_shock == slug %}selected{% endif %}>
+                    {{ s.icon }} {{ s.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="severityInput">Severity: <strong id="severityDisplay">{{ severity }}</strong>%</label>
+            <input type="range" name="severity" id="severityInput" min="0" max="100" value="{{ severity }}" class="severity-slider">
+        </div>
+        <button type="submit" class="btn btn-primary">Update</button>
+    </form>
+</div>
+
+<div class="impact-summary card">
+    <div class="impact-header">
+        <span class="shock-badge" style="background: {{ shock.color }}">{{ shock.icon }} {{ shock.name }}</span>
+        <span class="severity-badge">Severity: {{ severity }}%</span>
+    </div>
+</div>
+
+<div class="consumer-grid">
+    {% for item in impacts %}
+    <div class="consumer-card">
+        <div class="consumer-card-header">
+            <span class="consumer-category">{{ item.category }}</span>
+            <h4>{{ item.product }}</h4>
+        </div>
+        <div class="consumer-metrics">
+            <div class="metric">
+                <span class="metric-label">Price Increase</span>
+                <span class="metric-value text-danger">+{{ item.price_increase }}%</span>
+                <div class="metric-bar">
+                    <div class="metric-fill price-fill" style="width: {% widthratio item.price_increase 50 100 %}%"></div>
+                </div>
+            </div>
+            <div class="metric">
+                <span class="metric-label">Shortage Probability</span>
+                <span class="metric-value text-warning">{{ item.shortage_probability }}%</span>
+                <div class="metric-bar">
+                    <div class="metric-fill shortage-fill" style="width: {{ item.shortage_probability }}%"></div>
+                </div>
+            </div>
+        </div>
+        <div class="risk-indicator">
+            {% if item.shortage_probability >= 40 %}
+            <span class="badge badge-critical">High Risk</span>
+            {% elif item.shortage_probability >= 20 %}
+            <span class="badge badge-warning">Moderate Risk</span>
+            {% else %}
+            <span class="badge badge-success">Low Risk</span>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.getElementById('severityInput').addEventListener('input', function() {
+        document.getElementById('severityDisplay').textContent = this.value;
+    });
+</script>
+{% endblock %}

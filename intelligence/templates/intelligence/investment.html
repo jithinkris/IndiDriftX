@@ -1,0 +1,88 @@
+{% extends 'intelligence/base.html' %}
+{% load static %}
+
+{% block title %}Investment Dashboard — Supply Chain Shock Intelligence{% endblock %}
+{% block page_title %}Investment Dashboard{% endblock %}
+{% block page_subtitle %}Sector-level BUY / HOLD / SELL recommendations with expected returns{% endblock %}
+
+{% block content %}
+<div class="filter-bar card">
+    <div class="shock-tabs">
+        {% for slug, shock in shock_types.items %}
+        <a href="?shock={{ slug }}" class="shock-tab {% if selected_shock == slug %}active{% endif %}">
+            {{ shock.icon }} {{ shock.name }}
+        </a>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card stat-buy">
+        <div class="stat-value">{{ buy_count }}</div>
+        <div class="stat-label">BUY Signals</div>
+    </div>
+    <div class="stat-card stat-hold">
+        <div class="stat-value">{{ hold_count }}</div>
+        <div class="stat-label">HOLD Signals</div>
+    </div>
+    <div class="stat-card stat-sell">
+        <div class="stat-value">{{ sell_count }}</div>
+        <div class="stat-label">SELL Signals</div>
+    </div>
+</div>
+
+<div class="grid-2">
+    <div class="card">
+        <h3>Recommendation Distribution</h3>
+        <div class="chart-container">
+            <canvas id="recommendationChart"></canvas>
+        </div>
+    </div>
+    <div class="card">
+        <h3>Expected Returns by Sector</h3>
+        <div class="chart-container">
+            <canvas id="returnsChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <h3>Sector Recommendations</h3>
+    <div class="sector-grid">
+        {% for sector in sectors %}
+        <div class="sector-card rec-{{ sector.recommendation|lower }}">
+            <div class="sector-header">
+                <h4>{{ sector.sector }}</h4>
+                <span class="rec-badge rec-{{ sector.recommendation|lower }}">{{ sector.recommendation }}</span>
+            </div>
+            <div class="sector-metrics">
+                <div class="sector-metric">
+                    <span>Confidence</span>
+                    <strong>{{ sector.confidence }}%</strong>
+                </div>
+                <div class="sector-metric">
+                    <span>Expected Return</span>
+                    <strong class="{% if sector.expected_return > 0 %}text-success{% elif sector.expected_return < 0 %}text-danger{% endif %}">
+                        {{ sector.expected_return|floatformat:1 }}%
+                    </strong>
+                </div>
+            </div>
+            <p class="sector-rationale">{{ sector.rationale }}</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+    window.INVESTMENT_DATA = {
+        sectors: {{ sectors_json|safe }},
+        buyCount: {{ buy_count }},
+        holdCount: {{ hold_count }},
+        sellCount: {{ sell_count }}
+    };
+</script>
+<script src="{% static 'intelligence/js/investment.js' %}"></script>
+{% endblock %}
