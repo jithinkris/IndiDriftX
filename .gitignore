@@ -26,4 +26,6 @@ staticfiles/
 Thumbs.db
 
 # Render files (optional)
-render.yaml
+
+desktop.ini
+SCREENSHOTS/desktop.ini
